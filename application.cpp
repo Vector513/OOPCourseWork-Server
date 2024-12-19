@@ -13,18 +13,11 @@ Application::Application(int &argc, char **argv, TcpServer *otherServer, quint16
 
 Application::~Application() {};
 
-void Application::onMessageReceived(QTcpSocket *clientSocket, const QByteArray &message)
-{
-    qDebug() << "Получено сообщение от клиента:" << message;
-    QString messageStr = QString::fromUtf8(message);
-    processMessage(clientSocket, messageStr);
-}
-
 void Application::onNewConnection(QTcpSocket *clientSocket)
 {
     clientSockets[clientSocket] = clientSocket->peerAddress().toString();
     if (clientSockets.size() % 2 == 0) {
-        GameSession* session = new GameSession(waitingClientSocket, clientSocket);
+        GameSession* session = new GameSession(waitingClientSocket, clientSocket, server);
         gameSessions[waitingClientSocket] = session;
         gameSessions[clientSocket] = session;
         connect(session, &GameSession::gameFinished, this, &Application::onGameFinished);
@@ -62,8 +55,18 @@ void Application::onGameFinished(QString result, QTcpSocket *player1, QTcpSocket
     clientSockets.remove(player2);
 }
 
+void Application::onMessageReceived(QTcpSocket *clientSocket, const QByteArray &message)
+{
+    qDebug() << "Получено сообщение от клиента:" << message;
+    QString messageStr = QString::fromUtf8(message);
+    processMessage(clientSocket, messageStr);
+}
+
 void Application::processMessage(QTcpSocket *clientSocket, const QString &message)
 {
+    if (gameSessions.contains(clientSocket)) {
+        gameSessions[clientSocket]->update(clientSocket, message);
+    }
     /*
     QString response = "";
     std::istringstream stream(message.toStdString());

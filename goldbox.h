@@ -10,6 +10,10 @@ public:
     //explicit GoldBox(QObject *parent = nullptr);
     explicit GoldBox(QObject *parent = nullptr, int newMinCoins = 1, int newMaxCoins = 10);
 
+    bool wasOpened();
+
+    int getCountCoins();
+
     void setCountCoins(int countCoins);
     void setIsOpen(bool wasOpened);
     void setRandomCountCoins();

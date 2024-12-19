@@ -2,9 +2,19 @@
 #include <QRandomGenerator>
 
 GoldBox::GoldBox(QObject *parent, int newMinCoins, int newMaxCoins)
-    : QObject{parent}, minCoins(newMinCoins), maxCoins(newMaxCoins)
+    : QObject{parent}, minCoins(newMinCoins), maxCoins(newMaxCoins), isOpen(false)
 {
     setRandomCountCoins();
+}
+
+bool GoldBox::wasOpened()
+{
+    return isOpen;
+}
+
+int GoldBox::getCountCoins()
+{
+    return coins;
 }
 
 void GoldBox::setCountCoins(int countCoins)

@@ -2,9 +2,9 @@
 #define GAMESESSION_H
 
 #include "GoldBox.h"
+#include "TcpServer.h"
 
 #include <QObject>
-#include <QTcpSocket>
 #include <QVector>
 
 class GameSession : public QObject
@@ -12,21 +12,25 @@ class GameSession : public QObject
     Q_OBJECT
 
 public:
-    QTcpSocket *player1;
-    QTcpSocket *player2;
-    QString status;
-
-    GameSession(QTcpSocket *p1, QTcpSocket *p2, QObject *parent = nullptr);
+    GameSession(QTcpSocket *p1, QTcpSocket *p2, TcpServer* otherServer, QObject *parent = nullptr);
 
     QTcpSocket* getOpponentSocket(QTcpSocket* playerSocket);
-    void finish(QTcpSocket* playerSocket, QString event);
+    void update(QTcpSocket *playerSocket, const QString& event);
+    void finish(QTcpSocket* playerSocket, const QString& event);
 
 signals:
-    void gameFinished(QString result, QTcpSocket *player1, QTcpSocket *player2); // Раскомментирован сигнал
+    void gameFinished(QString result, QTcpSocket *player1, QTcpSocket *player2);
 
 private:
-    const size_t countGoldBoxes = 15;
+    QTcpSocket *player1;
+    QTcpSocket *player2;
+    TcpServer *server;
+    const size_t countGoldBoxes;
     QVector<GoldBox*> goldBoxes;
+    const int maxCountTurns;
+    int turnP1, turnP2;
+    bool isPrevOpenedP1, finishedP1, finishedP2;
+    bool isPrevTurnP1;
 
 };
 
