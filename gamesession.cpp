@@ -12,7 +12,12 @@ GameSession::GameSession(QTcpSocket *p1, QTcpSocket *p2, TcpServer *otherServer,
     turnP1(0), turnP2(0),
     isPrevOpenedP1(false), finishedP1(false), finishedP2(false),
     isPrevTurnP1(false)
-{}
+{
+    for (int i = 0; i < goldBoxes.size(); ++i) {
+        goldBoxes[i] = new GoldBox(this);  // Создаем новый объект GoldBox
+    }
+
+}
 
 QTcpSocket* GameSession::getOpponentSocket(QTcpSocket* playerSocket)
 {
@@ -31,18 +36,28 @@ void GameSession::update(QTcpSocket* playerSocket, const QString& event)
     std::stringstream ss;
     std::string command;
     stream >> command;
+
     if (playerSocket == player1) {
         if (turnP1 < maxCountTurns && !finishedP1) {
             if (command == "opened" && !isPrevTurnP1 && !isPrevOpenedP1) {
                 size_t i;
                 stream >> i;
+                qDebug() << "P1 opened\n";
+                // Проверяем, что индекс не выходит за пределы массива
+                if (i >= goldBoxes.size()) {
+                    qDebug() << "Ошибка: индекс сундука вне допустимого диапазона";
+                    return;
+                }
+                qDebug() << "Try to open\n";
                 if (!goldBoxes[i]->wasOpened()) {
+                    qDebug() << "SomeProblem\n";
                     response += "opened " + QString::number(i) + " ";
                     server->sendMessage(player2, response);
                     response += QString::number(goldBoxes[i]->getCountCoins());
                     server->sendMessage(player1, response);
                     isPrevOpenedP1 = true;
                 }
+                qDebug() << "Cool\n";
             }
             else if (command == "finalturn" && isPrevOpenedP1) {
                 finishedP1 = true;
@@ -64,6 +79,13 @@ void GameSession::update(QTcpSocket* playerSocket, const QString& event)
             if (command == "opened" && isPrevTurnP1 && isPrevOpenedP1 && turnP2 < maxCountTurns) {
                 size_t i;
                 stream >> i;
+
+                // Проверяем, что индекс не выходит за пределы массива
+                if (i >= goldBoxes.size()) {
+                    qDebug() << "Ошибка: индекс сундука вне допустимого диапазона";
+                    return;
+                }
+
                 if (!goldBoxes[i]->wasOpened()) {
                     response += "opened " + QString::number(i) + " ";
                     server->sendMessage(player1, response);
@@ -89,6 +111,7 @@ void GameSession::update(QTcpSocket* playerSocket, const QString& event)
     }
 }
 
+
 void GameSession::finish(QTcpSocket* playerSocket, const QString& event)
 {
     emit gameFinished(event, player1, player2);
@@ -98,3 +121,4 @@ void GameSession::finish(QTcpSocket* playerSocket, const QString& event)
         player2->disconnectFromHost();
     }
 }
+
