@@ -31,6 +31,7 @@ private:
     int turnP1, turnP2;
     bool isPrevOpenedP1, finishedP1, finishedP2;
     bool isPrevTurnP1;
+    int coinsP1, coinsP2;
 
 };
 

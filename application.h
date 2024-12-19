@@ -27,7 +27,6 @@ private:
 
     TcpServer* server;
     QTcpSocket* waitingClientSocket;
-    //QQueue<QTcpSocket*> waitingClientSockets;
     QMap<QTcpSocket*, QString> clientSockets;
     QMap<QTcpSocket*, GameSession*> gameSessions;
 };

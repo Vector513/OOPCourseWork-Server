@@ -20,27 +20,22 @@ void Application::onNewConnection(QTcpSocket *clientSocket)
         GameSession* session = new GameSession(waitingClientSocket, clientSocket, server);
         gameSessions[waitingClientSocket] = session;
         gameSessions[clientSocket] = session;
+        server->sendMessage(clientSocket, "opponentfound");
+        server->sendMessage(waitingClientSocket, "opponentfound");
         connect(session, &GameSession::gameFinished, this, &Application::onGameFinished);
     }
     else {
         waitingClientSocket = clientSocket;
     }
-    /*clientSockets[clientSocket] = clientSocket->peerAddress().toString();
-    if (waitingClientSockets.size() % 2 == 1) {
-        GameSession* session = new GameSession(waitingClientSockets.head(), clientSocket);
-        gameSessions[waitingClientSockets.head()] = session;
-        gameSessions[clientSocket] = session;
-        waitingClientSockets.dequeue();
-    }
-    else {
-        waitingClientSockets.enqueue(clientSocket);
-    }*/
 }
 
 void Application::onClientDisconnected(QTcpSocket *clientSocket)
 {
-    if (clientSocket != waitingClientSocket) {
+    qDebug() << "onClientDisconnected\n";
+    if (clientSocket != waitingClientSocket && clientSockets.contains(clientSocket)) {
+        qDebug() << "stardisc\n";
         gameSessions[clientSocket]->finish(clientSocket, "disconnected");
+        qDebug() << "finishdisc\n";
     }
     else {
         clientSockets.remove(clientSocket);
@@ -49,6 +44,7 @@ void Application::onClientDisconnected(QTcpSocket *clientSocket)
 
 void Application::onGameFinished(QString result, QTcpSocket *player1, QTcpSocket *player2)
 {
+    qDebug() << "onGameFinished\n";
     gameSessions.remove(player1);
     gameSessions.remove(player2);
     clientSockets.remove(player1);
@@ -67,13 +63,4 @@ void Application::processMessage(QTcpSocket *clientSocket, const QString &messag
     if (gameSessions.contains(clientSocket)) {
         gameSessions[clientSocket]->update(clientSocket, message);
     }
-    /*
-    QString response = "";
-    std::istringstream stream(message.toStdString());
-    std::stringstream ss;
-    std::string command;
-    stream >> command;
-
-    server->sendMessage(clientSocket, response);
-    */
 }
