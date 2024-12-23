@@ -7,21 +7,21 @@ class GoldBox : public QObject
 {
     Q_OBJECT
 public:
-    //explicit GoldBox(QObject *parent = nullptr);
-    explicit GoldBox(QObject *parent = nullptr, int newMinCoins = 1, int newMaxCoins = 10);
+    explicit GoldBox(QObject *parent = nullptr, int minCoins = 0, int maxCoins = 10);
 
-    bool wasOpened();
+    bool wasOpened() const;
+    int getCountCoins() const;
 
-    int getCountCoins();
-
-    void setCountCoins(int countCoins);
-    void setIsOpen(bool wasOpened);
-    void setRandomCountCoins();
+    void setCountCoins(const int countCoins);
+    void setIsOpen(const bool wasOpened);
+    void setIsLooted(const bool wasLooted);
 
 private:
-    int minCoins, maxCoins;
     int coins;
     bool isOpen;
+    bool isLooted;
+
+    void setRandomCountCoins(int minCoins, int maxCoins);
 };
 
 #endif // GOLDBOX_H

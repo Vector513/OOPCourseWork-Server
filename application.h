@@ -16,14 +16,14 @@ public:
     ~Application();
 
 private slots:
-    void onMessageReceived(QTcpSocket *clientSocket, const QByteArray &message);
+    void onDataReceived(QTcpSocket *clientSocket, QByteArray& data);
     void onNewConnection(QTcpSocket *clientSocket);
     void onClientDisconnected(QTcpSocket *clientSocket);
 
-    void onGameFinished(QString result, QTcpSocket *player1, QTcpSocket *player2);
+    void onGameFinished(QTcpSocket *player1, QTcpSocket *player2);
 
 private:
-    void processMessage(QTcpSocket *clientSocket, const QString &message);
+    void processData(QTcpSocket *clientSocket, QByteArray& data);
 
     TcpServer* server;
     QTcpSocket* waitingClientSocket;

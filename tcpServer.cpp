@@ -23,21 +23,26 @@ void TcpServer::startServer(quint16 port)
     }
 }
 
-void TcpServer::sendMessage(QTcpSocket *clientSocket, const QString &response)
+void TcpServer::sendData(QTcpSocket *clientSocket, const QByteArray& data)
 {
     if (clientSocket->state() == QAbstractSocket::ConnectedState) {
-        qDebug() << "Отправка данных:" << response;
-        clientSocket->write(response.toUtf8());
+        qDebug() << "Отправка данных:" << data;
 
-        if (!clientSocket->waitForBytesWritten(5000)) {
-            qWarning() << "Ошибка при отправке данных:" << clientSocket->errorString();
+        // Добавление разделителя (например, символ новой строки)
+        QByteArray dataWithDelimiter = data + ";";
+
+        clientSocket->write(dataWithDelimiter);
+
+        if (!clientSocket->flush()) {
+            qWarning() << "Не удалось отправить данные немедленно: " << clientSocket->errorString();
         } else {
             qDebug() << "Данные отправлены!";
         }
     } else {
-        qWarning() << "Нет подключения к серверу!";
+        qWarning() << "Сокет отключен. Не удалось отправить данные: " << data;
     }
 }
+
 
 void TcpServer::onNewConnection()
 {
@@ -46,7 +51,6 @@ void TcpServer::onNewConnection()
     connect(clientSocket, &QTcpSocket::readyRead, this, &TcpServer::onDataReceived);
     connect(clientSocket, &QTcpSocket::disconnected, this, &TcpServer::onClientDisconnected);
     connect(clientSocket, &QTcpSocket::errorOccurred, this, &TcpServer::onErrorOccurred);
-    connect(clientSocket, &QTcpSocket::bytesWritten, this, &TcpServer::onBytesWritten);
 
     emit newConnection(clientSocket);
 
@@ -60,14 +64,11 @@ void TcpServer::onDataReceived()
         return;
 
     QByteArray data = clientSocket->readAll();
-    //qDebug() << "Получены данные от клиента" << clientSockets[clientSocket] << ":" << data;
 
     if (data.isEmpty()) {
         qWarning() << "Нет данных от клиента, возможно, клиент отключился.";
     } else {
-        emit messageReceived(clientSocket, data);
-        clientSocket->flush();
-        //qDebug() << "Ответ отправлен клиенту" << clientSockets[clientSocket];
+        emit dataReceived(clientSocket, data);
     }
 }
 
@@ -79,8 +80,6 @@ void TcpServer::onClientDisconnected()
 
     emit clientDisconnected(clientSocket);
 
-    //qDebug() << "Клиент отключился:" << clientSockets[clientSocket];
-    //clientSockets.remove(clientSocket);
     clientSocket->deleteLater();
 }
 
@@ -92,31 +91,16 @@ void TcpServer::onErrorOccurred(QAbstractSocket::SocketError socketError)
 
     switch (socketError) {
     case QAbstractSocket::RemoteHostClosedError:
-        //qWarning() << "Удалённый хост закрыл соединение:" << clientSockets[clientSocket];
         break;
     case QAbstractSocket::HostNotFoundError:
-        //qWarning() << "Хост не найден:" << clientSockets[clientSocket];
         break;
     case QAbstractSocket::ConnectionRefusedError:
-        //qWarning() << "Подключение отклонено:" << clientSockets[clientSocket];
         break;
     default:
-        //qWarning() << "Ошибка сокета у клиента" << clientSockets[clientSocket] << ":"
-        //           << clientSocket->errorString();
         break;
     }
 
     emit clientDisconnected(clientSocket);
 
-    //clientSockets.remove(clientSocket);
     clientSocket->deleteLater();
-}
-
-void TcpServer::onBytesWritten(qint64 bytes)
-{
-    QTcpSocket *clientSocket = qobject_cast<QTcpSocket *>(sender());
-    if (!clientSocket)
-        return;
-
-    //qDebug() << bytes << "байт отправлено клиенту" << clientSockets[clientSocket];
 }

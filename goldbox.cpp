@@ -1,33 +1,42 @@
-#include "goldbox.h"
+#include "GoldBox.h"
 #include <QRandomGenerator>
 
-GoldBox::GoldBox(QObject *parent, int newMinCoins, int newMaxCoins)
-    : QObject{parent}, minCoins(newMinCoins), maxCoins(newMaxCoins), isOpen(false)
+GoldBox::GoldBox(QObject *parent, int minCoins, int maxCoins)
+    : QObject{parent}, coins(0), isOpen(false), isLooted(false)
 {
-    setRandomCountCoins();
+    setRandomCountCoins(minCoins, maxCoins);
 }
 
-bool GoldBox::wasOpened()
+bool GoldBox::wasOpened() const
 {
     return isOpen;
 }
 
-int GoldBox::getCountCoins()
+int GoldBox::getCountCoins() const
 {
     return coins;
 }
 
-void GoldBox::setCountCoins(int countCoins)
+void GoldBox::setCountCoins(const int countCoins)
 {
     coins = countCoins;
 }
 
-void GoldBox::setIsOpen(bool wasOpened)
+void GoldBox::setIsOpen(const bool wasOpened)
 {
     isOpen = wasOpened;
 }
 
-void GoldBox::setRandomCountCoins()
+void GoldBox::setIsLooted(const bool wasLooted)
 {
-    coins = QRandomGenerator::global()->bounded(minCoins, maxCoins);
+    isLooted = wasLooted;
+}
+
+void GoldBox::setRandomCountCoins(int minCoins, int maxCoins)
+{
+    if (minCoins >= maxCoins) {
+        coins = minCoins;
+    } else {
+        coins = QRandomGenerator::global()->bounded(minCoins, maxCoins);
+    }
 }

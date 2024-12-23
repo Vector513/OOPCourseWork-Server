@@ -16,23 +16,21 @@ class TcpServer : public QObject
 public:
     TcpServer(QObject *parent = nullptr);
     void startServer(quint16 port);
-    void sendMessage(QTcpSocket *clientSocket, const QString &response);
+    void sendData(QTcpSocket *clientSocket, const QByteArray& data);
 
 signals:
-    void messageReceived(QTcpSocket *clientSocket, const QByteArray &message);
     void clientDisconnected(QTcpSocket *clientSocket);
     void newConnection(QTcpSocket *clientSocket);
+    void dataReceived(QTcpSocket *clientSocket, QByteArray &data);
 
 private slots:
     void onNewConnection();
     void onDataReceived();
     void onClientDisconnected();
     void onErrorOccurred(QAbstractSocket::SocketError socketError);
-    void onBytesWritten(qint64 bytes);
 
 private:
     QTcpServer *server;
-    //QMap<QTcpSocket*, QString> clientSockets;
 };
 
 #endif // TCPSERVER_H

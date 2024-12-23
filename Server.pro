@@ -14,14 +14,12 @@ SOURCES += \
     gamesession.cpp \
     goldbox.cpp \
     main.cpp \
-    mainwindow.cpp \
     tcpServer.cpp
 
 HEADERS += \
     application.h \
     gamesession.h \
     goldbox.h \
-    mainwindow.h \
     tcpServer.h
 
 # Default rules for deployment.

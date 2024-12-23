@@ -6,6 +6,7 @@
 
 #include <QObject>
 #include <QVector>
+#include <QElapsedTimer>
 
 class GameSession : public QObject
 {
@@ -19,7 +20,7 @@ public:
     void finish(QTcpSocket* playerSocket, const QString& event);
 
 signals:
-    void gameFinished(QString result, QTcpSocket *player1, QTcpSocket *player2);
+    void gameFinished(QTcpSocket *player1, QTcpSocket *player2);
 
 private:
     QTcpSocket *player1;
@@ -29,9 +30,12 @@ private:
     QVector<GoldBox*> goldBoxes;
     const int maxCountTurns;
     int turnP1, turnP2;
-    bool isPrevOpenedP1, finishedP1, finishedP2;
+    int prevOpenedIndex;
+    bool isPrevOpenedP1, lootedP1, lootedP2;
     bool isPrevTurnP1;
-    int coinsP1, coinsP2;
+    int coinsTakenP1, coinsTakenP2;
+
+    QElapsedTimer gameTimer;
 
 };
 
