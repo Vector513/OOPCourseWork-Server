@@ -20,6 +20,10 @@ GameSession::GameSession(QTcpSocket *p1, QTcpSocket *p2, TcpServer *otherServer,
     gameTimer.start();
 
     server->sendData(player1, "GameInfoWidget YourTurn");
+    server->sendData(player1, ("GameInfoWidget MovesLeftForYou " + QString::number(maxCountTurns)).toUtf8());
+    server->sendData(player1, ("GameInfoWidget MovesLeftForOpponent " + QString::number(maxCountTurns)).toUtf8());
+    server->sendData(player2, ("GameInfoWidget MovesLeftForYou " + QString::number(maxCountTurns)).toUtf8());
+    server->sendData(player2, ("GameInfoWidget MovesLeftForOpponent " + QString::number(maxCountTurns)).toUtf8());
 }
 
 QTcpSocket* GameSession::getOpponentSocket(QTcpSocket* playerSocket)
@@ -34,8 +38,8 @@ void GameSession::update(QTcpSocket* playerSocket, const QString& event)
     QString response;
 
     if (playerSocket == player1) {
-        if (turnP1 < maxCountTurns && !lootedP1) {
-            if (command == "GoldBoxOpened" && !isPrevTurnP1 && !isPrevOpenedP1) {
+        if (turnP1 < maxCountTurns && !lootedP1 && !isPrevTurnP1) {
+            if (command == "GoldBoxOpened" && !isPrevOpenedP1) {
                 bool ok;
                 size_t i = parts[1].toUInt(&ok);
                 if (!ok || i >= goldBoxes.size()) {
@@ -53,7 +57,6 @@ void GameSession::update(QTcpSocket* playerSocket, const QString& event)
                     server->sendData(player1, response.toUtf8());
                     isPrevOpenedP1 = true;
                     prevOpenedIndex = i;
-                    //coinsTakenP1 += goldBoxes[i]->getCountCoins();
                 }
             }
             else if (command == "Finish" && isPrevOpenedP1) {
@@ -66,19 +69,37 @@ void GameSession::update(QTcpSocket* playerSocket, const QString& event)
                 coinsTakenP1 = goldBoxes[prevOpenedIndex]->getCountCoins();
                 lootedP1 = true;
                 isPrevTurnP1 = true;
-                turnP1++;
+                turnP1 = maxCountTurns;
+                if (!lootedP2) {
+                    response = "GameInfoWidget YourTurn";
+                    server->sendData(player2, response.toUtf8());
+                    response = "GameInfoWidget Wait";
+                    server->sendData(player1, response.toUtf8());
+                    response = "GameInfoWidget MovesLeftForYou 0";
+                    server->sendData(player1, response.toUtf8());
+                    response = "GameInfoWidget MovesLeftForOpponent 0";
+                    server->sendData(player2, response.toUtf8());
+                }
             }
             else if (command == "Continue" && isPrevOpenedP1 && (turnP1 + 1) < maxCountTurns) {
-                response = "GameInfoWidget YourTurn";
-                server->sendData(player2, response.toUtf8());
-                response = "GameInfoWidget Wait";
-                server->sendData(player1, response.toUtf8());
-                isPrevTurnP1 = true;
                 turnP1++;
                 if (lootedP2) {
+                    response = "GameInfoWidget YourTurn";
+                    server->sendData(player1, response.toUtf8());
                     isPrevTurnP1 = false;
                     isPrevOpenedP1 = false;
                 }
+                else {
+                    response = "GameInfoWidget Wait";
+                    server->sendData(player1, response.toUtf8());
+                    response = "GameInfoWidget YourTurn";
+                    server->sendData(player2, response.toUtf8());
+                    isPrevTurnP1 = true;
+                }
+                response = "GameInfoWidget MovesLeftForYou" + QString::number(maxCountTurns-turnP1);
+                server->sendData(player1, response.toUtf8());
+                response = "GameInfoWidget MovesLeftForOpponent" + QString::number(maxCountTurns-turnP1);
+                server->sendData(player2, response.toUtf8());
             }
         }
         if (turnP1 == maxCountTurns) {
@@ -86,9 +107,8 @@ void GameSession::update(QTcpSocket* playerSocket, const QString& event)
         }
     }
     else if (playerSocket == player2) {
-        if (turnP2 < maxCountTurns && !lootedP2) {
-            if (command == "GoldBoxOpened" && isPrevTurnP1 && isPrevOpenedP1) {
-                qDebug() << "Ya tut";
+        if (turnP2 < maxCountTurns && !lootedP2 && isPrevTurnP1) {
+            if (command == "GoldBoxOpened" && isPrevOpenedP1) {
                 bool ok;
                 size_t i = parts[1].toUInt(&ok);
                 if (!ok || i >= goldBoxes.size()) {
@@ -106,7 +126,6 @@ void GameSession::update(QTcpSocket* playerSocket, const QString& event)
                     server->sendData(player2, response.toUtf8());
                     isPrevOpenedP1 = false;
                     prevOpenedIndex = i;
-                    //coinsTakenP2 += goldBoxes[i]->getCountCoins();
                 }
             }
             else if (command == "Finish" && !isPrevOpenedP1) {
@@ -119,26 +138,43 @@ void GameSession::update(QTcpSocket* playerSocket, const QString& event)
                 coinsTakenP2 = goldBoxes[prevOpenedIndex]->getCountCoins();
                 lootedP2 = true;
                 isPrevTurnP1 = false;
-                turnP2++;
+                turnP2 = maxCountTurns;
+                if (!lootedP1) {
+                    response = "GameInfoWidget YourTurn";
+                    server->sendData(player1, response.toUtf8());
+                    response = "GameInfoWidget Wait";
+                    server->sendData(player2, response.toUtf8());
+                    response = "GameInfoWidget MovesLeftForYou 0";
+                    server->sendData(player2, response.toUtf8());
+                    response = "GameInfoWidget MovesLeftForOpponent 0";
+                    server->sendData(player1, response.toUtf8());
+                }
             }
             else if (command == "Continue" && !isPrevOpenedP1 && (turnP2 + 1) < maxCountTurns) {
-                response = "GameInfoWidget YourTurn";
-                server->sendData(player1, response.toUtf8());
-                response = "GameInfoWidget Wait";
-                server->sendData(player2, response.toUtf8());
-                isPrevTurnP1 = false;
                 turnP2++;
                 if (lootedP1) {
+                    response = "GameInfoWidget YourTurn";
+                    server->sendData(player2, response.toUtf8());
                     isPrevTurnP1 = true;
                     isPrevOpenedP1 = true;
                 }
+                else {
+                    response = "GameInfoWidget Wait";
+                    server->sendData(player2, response.toUtf8());
+                    response = "GameInfoWidget YourTurn";
+                    server->sendData(player1, response.toUtf8());
+                    isPrevTurnP1 = false;
+                }
+                response = "GameInfoWidget MovesLeftForYou" + QString::number(maxCountTurns-turnP1);
+                server->sendData(player2, response.toUtf8());
+                response = "GameInfoWidget MovesLeftForOpponent" + QString::number(maxCountTurns-turnP1);
+                server->sendData(player1, response.toUtf8());
             }
         }
         if (turnP2 == maxCountTurns) {
             lootedP2 = true;
         }
     }
-
 
     if (lootedP1 && lootedP2) {
         finish(player1, "GameOver");
