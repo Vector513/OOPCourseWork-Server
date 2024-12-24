@@ -7,7 +7,6 @@
 #include <QHostAddress>
 #include <QNetworkInterface>
 #include <QByteArray>
-#include <QMap>
 
 class TcpServer : public QObject
 {

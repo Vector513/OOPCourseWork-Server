@@ -19,7 +19,6 @@ private slots:
     void onDataReceived(QTcpSocket *clientSocket, QByteArray& data);
     void onNewConnection(QTcpSocket *clientSocket);
     void onClientDisconnected(QTcpSocket *clientSocket);
-
     void onGameFinished(QTcpSocket *player1, QTcpSocket *player2);
 
 private:
