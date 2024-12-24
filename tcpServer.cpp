@@ -28,7 +28,6 @@ void TcpServer::sendData(QTcpSocket *clientSocket, const QByteArray& data)
     if (clientSocket->state() == QAbstractSocket::ConnectedState) {
         qDebug() << "Отправка данных:" << data;
 
-        // Добавление разделителя (например, символ новой строки)
         QByteArray dataWithDelimiter = data + ";";
 
         clientSocket->write(dataWithDelimiter);

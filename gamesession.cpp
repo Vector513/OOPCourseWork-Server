@@ -96,9 +96,9 @@ void GameSession::update(QTcpSocket* playerSocket, const QString& event)
                     server->sendData(player2, response.toUtf8());
                     isPrevTurnP1 = true;
                 }
-                response = "GameInfoWidget MovesLeftForYou" + QString::number(maxCountTurns-turnP1);
+                response = "GameInfoWidget MovesLeftForYou " + QString::number(maxCountTurns-turnP1);
                 server->sendData(player1, response.toUtf8());
-                response = "GameInfoWidget MovesLeftForOpponent" + QString::number(maxCountTurns-turnP1);
+                response = "GameInfoWidget MovesLeftForOpponent " + QString::number(maxCountTurns-turnP1);
                 server->sendData(player2, response.toUtf8());
             }
         }
@@ -165,9 +165,9 @@ void GameSession::update(QTcpSocket* playerSocket, const QString& event)
                     server->sendData(player1, response.toUtf8());
                     isPrevTurnP1 = false;
                 }
-                response = "GameInfoWidget MovesLeftForYou" + QString::number(maxCountTurns-turnP1);
+                response = "GameInfoWidget MovesLeftForYou " + QString::number(maxCountTurns-turnP1);
                 server->sendData(player2, response.toUtf8());
-                response = "GameInfoWidget MovesLeftForOpponent" + QString::number(maxCountTurns-turnP1);
+                response = "GameInfoWidget MovesLeftForOpponent " + QString::number(maxCountTurns-turnP1);
                 server->sendData(player1, response.toUtf8());
             }
         }
@@ -189,49 +189,66 @@ void GameSession::finish(QTcpSocket* playerSocket, const QString& event)
 
     if (event == "GameOver") {
         if (coinsTakenP1 > coinsTakenP2) {
+            server->sendData(player1, "Application ResultWidget");
             server->sendData(player1, QString("GameResultWidget Winner %1 %2 %3")
                                           .arg(coinsTakenP1 - coinsTakenP2)
                                           .arg(minutes)
                                           .arg(seconds).toUtf8());
+            server->sendData(player2, "Application ResultWidget");
             server->sendData(player2, QString("GameResultWidget Loser %1 %2 %3")
                                           .arg(coinsTakenP1 - coinsTakenP2)
                                           .arg(minutes)
                                           .arg(seconds).toUtf8());
+
         }
         else if (coinsTakenP1 < coinsTakenP2) {
+            server->sendData(player1, "Application ResultWidget");
             server->sendData(player1, QString("GameResultWidget Loser %1 %2 %3")
                                  .arg(coinsTakenP2 - coinsTakenP1)
                                  .arg(minutes)
                                  .arg(seconds).toUtf8());
+            server->sendData(player2, "Application ResultWidget");
             server->sendData(player2, QString("GameResultWidget Winner %1 %2 %3")
                                           .arg(coinsTakenP2 - coinsTakenP1)
                                           .arg(minutes)
                                           .arg(seconds).toUtf8());
         }
         else {
+            server->sendData(player1, "Application ResultWidget");
             server->sendData(player1, QString("GameResultWidget Draw %1 %2")
                                  .arg(minutes)
                                  .arg(seconds).toUtf8());
+            server->sendData(player2, "Application ResultWidget");
             server->sendData(player2, QString("GameResultWidget Draw %1 %2")
                                           .arg(minutes)
                                           .arg(seconds).toUtf8());
         }
-        player1->disconnectFromHost();
-        player2->disconnectFromHost();
     }
 
     else if (event == "Disconnected") {
         if (playerSocket == player1) {
-            server->sendData(player2, QString("GameResultWidget Winner Disconnected %1 %2")
-                                          .arg(minutes)
-                                          .arg(seconds).toUtf8());
-            player2->disconnectFromHost();
+            qDebug() << "Ya perv";
+
+            if (player2 && player2->state() == QAbstractSocket::ConnectedState) {
+                server->sendData(player2, "Application ResultWidget");
+                server->sendData(player2, QString("GameResultWidget Winner Disconnected %1 %2")
+                                              .arg(minutes)
+                                              .arg(seconds).toUtf8());
+            } else {
+                qDebug() << "player2 не в состоянии ConnectedState, данные отправить невозможно.";
+            }
         }
         else if (playerSocket == player2) {
-            server->sendData(player1, QString("GameResultWidget Winner Disconnected %1 %2")
-                                          .arg(minutes)
-                                          .arg(seconds).toUtf8());
-            player1->disconnectFromHost();
+            qDebug() << "Ya vtor";
+
+            if (player1 && player1->state() == QAbstractSocket::ConnectedState) {
+                server->sendData(player1, "Application ResultWidget");
+                server->sendData(player1, QString("GameResultWidget Winner Disconnected %1 %2")
+                                              .arg(minutes)
+                                              .arg(seconds).toUtf8());
+            } else {
+                qDebug() << "player1 не в состоянии ConnectedState, данные отправить невозможно.";
+            }
         }
     }
 

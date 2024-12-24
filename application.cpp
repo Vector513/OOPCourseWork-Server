@@ -1,6 +1,4 @@
 #include "application.h"
-#include <QDebug>
-#include <QTimer>
 
 Application::Application(int &argc, char **argv, TcpServer *otherServer, quint16 port)
     : QCoreApplication(argc, argv), server(otherServer)
@@ -11,12 +9,18 @@ Application::Application(int &argc, char **argv, TcpServer *otherServer, quint16
     connect(server, &TcpServer::dataReceived, this, &Application::onDataReceived);
 }
 
-Application::~Application() {};
+Application::~Application() {}
 
 void Application::onNewConnection(QTcpSocket *clientSocket)
 {
     server->sendData(clientSocket, "Application FindOpponentWidget");
     clientSockets[clientSocket] = clientSocket->peerAddress().toString();
+
+    for (QTcpSocket* socket : clientSockets.keys()) {
+        QString message = QString("FindOpponentWidget OnlinePlayers %1").arg(clientSockets.size());
+        server->sendData(socket, message.toUtf8());
+    }
+
     if (clientSockets.size() % 2 == 0) {
         GameSession* session = new GameSession(waitingClientSocket, clientSocket, server);
         gameSessions[waitingClientSocket] = session;
@@ -28,8 +32,7 @@ void Application::onNewConnection(QTcpSocket *clientSocket)
         waitingClientSocket = nullptr;
 
         connect(session, &GameSession::gameFinished, this, &Application::onGameFinished);
-    }
-    else {
+    } else {
         waitingClientSocket = clientSocket;
     }
 }
@@ -37,27 +40,47 @@ void Application::onNewConnection(QTcpSocket *clientSocket)
 void Application::onClientDisconnected(QTcpSocket *clientSocket)
 {
     qDebug() << "onClientDisconnected";
-    if (clientSocket != waitingClientSocket) { //&& clientSockets.contains(clientSocket)) {
-        gameSessions[clientSocket]->finish(clientSocket, "Disconnected");
+    if (clientSocket != waitingClientSocket) {
+        if (gameSessions.contains(clientSocket)) {
+            GameSession* session = gameSessions[clientSocket];
+            if (session) {
+                session->finish(clientSocket, "Disconnected");
+            }
+        }
+    } else {
+        waitingClientSocket = nullptr;
     }
-    else {
-        clientSockets.remove(clientSocket);
+
+    clientSockets.remove(clientSocket);
+
+    for (QTcpSocket* socket : clientSockets.keys()) {
+        QString message = QString("FindOpponentWidget OnlinePlayers %1").arg(clientSockets.size());
+        server->sendData(socket, message.toUtf8());
     }
 }
 
 void Application::onGameFinished(QTcpSocket *player1, QTcpSocket *player2)
 {
-    qDebug() << "onGameFinished";
-    delete gameSessions[player1];
-    gameSessions.remove(player1);
-    gameSessions.remove(player2);
-    clientSockets.remove(player1);
-    clientSockets.remove(player2);
+    if (gameSessions.contains(player1) && gameSessions.contains(player2)) {
+        delete gameSessions[player2];
+    }
+    if (gameSessions.contains(player1)) {
+        gameSessions.remove(player1);
+    }
+
+    if (gameSessions.contains(player2)) {
+        gameSessions.remove(player2);
+    }
+
+    if (clientSockets.contains(player1)) clientSockets.remove(player1);
+    if (clientSockets.contains(player2)) clientSockets.remove(player2);
+
+    if (player1) player1->disconnectFromHost();
+    if (player2) player2->disconnectFromHost();
 }
 
 void Application::onDataReceived(QTcpSocket *clientSocket, QByteArray &data)
 {
-    qDebug() << "Получено сообщение от клиента:" << data;
     processData(clientSocket, data);
 }
 
